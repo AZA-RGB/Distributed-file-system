@@ -1,12 +1,13 @@
 package Node;
 
+import common.CoordinatorInterface;
 import common.NodeInterface;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -14,22 +15,36 @@ import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
     String NodeId,StoragePath;
+    CoordinatorInterface coordinator;
 
-    private NodeImpl(String id, String storagePath) throws RemoteException {
+    private NodeImpl(String id, String storagePath,CoordinatorInterface c) throws RemoteException {
         super();
         this.NodeId=id;
         this.StoragePath=storagePath;
+        this.coordinator=c;
+        ScheduledExecutorService heartBeatScheduler = Executors.newScheduledThreadPool(1);
+        heartBeatScheduler.scheduleAtFixedRate(() -> {
+            try {
+                this.coordinator.receiveHeartbeat(this.NodeId);
+            } catch (RemoteException e) {
+                throw new RuntimeException(e);
+            }
+        },0, 500, TimeUnit.MILLISECONDS);
     }
 
-    public static NodeImpl getInstance(String id) throws RemoteException {
+
+    public static NodeImpl getInstance(String id, CoordinatorInterface c) throws RemoteException {
         //load servers id list
         //check if node already exist, if not create storage folder for the new node then create node object
         String StoragePath=findStoragePath(id);
         if(null!=StoragePath){//old node (recovery situation)
-            return new NodeImpl(id,StoragePath);
+            return new NodeImpl(id,StoragePath,c);
         }
         System.out.println("This is a new Node ");
         System.out.println("creating new Storage folder....");
@@ -39,7 +54,7 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
             System.out.println("Directory created successfully");
             //  save new node to nodeslist.json
             addToNodesList(id,StoragePath);
-            return new NodeImpl(id,"NodeStorage-"+id);
+            return new NodeImpl(id,"NodeStorage-"+id,c);
         } else {
             System.err.println("Failed to create directory (it may already exist)");
             return null;
@@ -99,16 +114,6 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
     }
 
 
-
-
-
-
-
-
-
-    protected NodeImpl() throws RemoteException {
-        super();
-    }
 
 
     @Override

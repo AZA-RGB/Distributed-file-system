@@ -8,5 +8,5 @@ public interface CoordinatorInterface extends Remote {
     void login() throws RemoteException;
     NodeInterface addFile(String fileName) throws RemoteException;
 
-
+    void receiveHeartbeat(String nodeId) throws RemoteException;
 }

@@ -18,9 +18,9 @@ public class nodeServer {
         Scanner sc=new Scanner(System.in);
         System.out.println("Enter node id");
         String id=sc.next();
-        NodeImpl node= NodeImpl.getInstance(id);
+        NodeImpl node= NodeImpl.getInstance(id,c);
         if(node!=null){
-            c.RegisterNode(node.NodeId,(NodeInterface) node);
+            c.RegisterNode(node.NodeId, node);
         }else {
             System.err.println("couldn't create node ");
         }
