@@ -6,14 +6,72 @@ import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.util.Scanner;
 
 public class Main {
-    public static void main(String[] args) throws MalformedURLException, NotBoundException, RemoteException {
-        CoordinatorInterface c=(CoordinatorInterface) Naming.lookup("rmi://localhost:1099/mainCoordinator");
-        Employee e=new Employee(c);
-        System.out.println("client started");
+    private static final Scanner scanner = new Scanner(System.in);
 
-        e.addFile("hello file");
+    public static void main(String[] args) {
+        try {
+            CoordinatorInterface c = (CoordinatorInterface) Naming.lookup("rmi://localhost:1099/mainCoordinator");
+            Employee e = new Employee(c);
+            System.out.println("Client started");
 
+            // تسجيل الدخول
+            System.out.print("Username: ");
+            String username = scanner.nextLine();
+            System.out.print("Password: ");
+            String password = scanner.nextLine();
+            if (!e.login(username, password)) {
+                System.out.println("Login failed!");
+                return;
+            }
+
+            // واجهة تفاعلية
+            while (true) {
+                System.out.println("\nOptions:");
+                System.out.println("1. Add File");
+                System.out.println("2. Delete File");
+                System.out.println("3. Get File");
+                System.out.println("4. Exit");
+                System.out.print("Choose an option: ");
+                int choice = scanner.nextInt();
+                scanner.nextLine();
+
+                switch (choice) {
+                    case 1:
+                        System.out.print("File name: ");
+                        String name = scanner.nextLine();
+                        System.out.print("Department: ");
+                        String dept = scanner.nextLine();
+                        System.out.print("Content: ");
+                        String content = scanner.nextLine();
+                        e.addFile(name, dept, content.getBytes());
+                        break;
+                    case 2:
+                        System.out.print("File name: ");
+                        name = scanner.nextLine();
+                        System.out.print("Department: ");
+                        dept = scanner.nextLine();
+                        e.deleteFile(name, dept);
+                        break;
+                    case 3:
+                        System.out.print("File name: ");
+                        name = scanner.nextLine();
+                        System.out.print("Department: ");
+                        dept = scanner.nextLine();
+                        e.getFile(name, dept);
+                        break;
+                    case 4:
+                        System.out.println("Exiting...");
+                        return;
+                    default:
+                        System.out.println("Invalid option!");
+                }
+            }
+        } catch (MalformedURLException | NotBoundException | RemoteException ex) {
+            System.err.println("Client error: " + ex.getMessage());
+        }
     }
 }
+

@@ -4,5 +4,8 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 public interface NodeInterface extends Remote {
-    void addFile(String s) throws RemoteException;
+    boolean addFile(String name, String department, byte[] content) throws RemoteException;
+    boolean deleteFile(String name, String department) throws RemoteException;
+    FileInfo getFile(String name, String department) throws RemoteException;
+    boolean isAlive() throws RemoteException;
 }

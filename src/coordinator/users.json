@@ -1,0 +1,10 @@
+[{
+  "password": "$2a$10$02ERCroDblY4ijOBhCW1subYcgjNSPiQnG2rw4bgLOihzOvl321nm",
+  "permissions": [
+    "add",
+    "delete",
+    "read"
+  ],
+  "department": "it",
+  "username": "ali"
+}]

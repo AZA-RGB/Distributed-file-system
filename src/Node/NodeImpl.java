@@ -1,6 +1,7 @@
 package Node;
 
 import common.CoordinatorInterface;
+import common.FileInfo;
 import common.NodeInterface;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -114,10 +115,27 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
     }
 
 
-
+    @Override
+    public boolean addFile(String name, String department, byte[] content) throws RemoteException {
+        return false;
+    }
 
     @Override
-    public void addFile(String s) throws RemoteException {
-        System.out.println("Adding file "+ s);
+    public boolean deleteFile(String name, String department) throws RemoteException {
+        return false;
+    }
+
+    @Override
+    public FileInfo getFile(String name, String department) throws RemoteException {
+        return null;
+    }
+
+    @Override
+    public boolean isAlive() throws RemoteException {
+        return false;
+    }
+
+    public String getNodeId() {
+        return NodeId;
     }
 }
