@@ -198,12 +198,19 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
     }
 
     private NodeInterface pickNodeToAddFile() throws RemoteException {
-        List<NodeInterface> aliveNodes = getAliveNodes();
-        if (aliveNodes.isEmpty()) {
+        if (nodesMap.isEmpty()) {
             throw new RemoteException("No nodes available to add file");
         }
-        int nextIndex = addFileNodeIndex.incrementAndGet() % aliveNodes.size();
-        return aliveNodes.get(nextIndex);
+        // Convert keys to array for round-robin selection
+        String[] nodeKeys = nodesMap.keySet().toArray(new String[0]);
+        // Get next node in round-robin fashion
+        int nextIndex = addFileNodeIndex.incrementAndGet() % nodeKeys.length;
+        if (nextIndex < 0) { // Handle potential negative values
+            nextIndex += nodeKeys.length;
+        }
+
+        String selectedNodeKey = nodeKeys[nextIndex];
+        return nodesMap.get(selectedNodeKey);
     }
 
     private List<NodeInterface> getAliveNodes() {
