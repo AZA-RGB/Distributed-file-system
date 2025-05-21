@@ -17,15 +17,15 @@ public class Main {
             Manager m = new Manager(c);
             System.out.println("Manager client started");
 
-//            // تسجيل الدخول
-//            System.out.print("Username: ");
-//            String username = scanner.nextLine();
-//            System.out.print("Password: ");
-//            String password = scanner.nextLine();
-//            if (!m.login(username, password)) {
-//                System.out.println("Login failed!");
-//                return;
-//            }
+            // تسجيل الدخول
+            System.out.print("email: ");
+            String email = scanner.nextLine();
+            System.out.print("Password: ");
+            String password = scanner.nextLine();
+            if (!m.login(email, password)) {
+                System.out.println("Login failed!");
+                return;
+            }
 
             // واجهة تفاعلية
             while (true) {

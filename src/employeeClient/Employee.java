@@ -1,5 +1,6 @@
 package employeeClient;
 
+import Node.services.LoginService;
 import common.CoordinatorInterface;
 import common.FileInfo;
 
@@ -13,13 +14,13 @@ public class Employee {
 
     public Employee(CoordinatorInterface c) throws RemoteException {
         this.coordinator = c;
-
     }
 
-    public boolean login(String username, String password) throws RemoteException {
-        System.out.println("Employee: Calling login for user: " + username + ", password: " + password);
+    public boolean login(String email, String password) throws RemoteException {
+        System.out.println("Employee: Calling login for user: " + email + ", password: " + password);
         try {
-            token = coordinator.login(username, password);
+            LoginService loginService = new LoginService(coordinator);
+            token = loginService.execute(email, password);
             System.out.println("Employee: Login returned token: " + (token != null ? token : "null"));
         } catch (RemoteException e) {
             System.err.println("Employee: RMI error during login: " + e.getMessage());

@@ -7,8 +7,6 @@ import common.User;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
-import org.mindrot.jbcrypt.BCrypt;
-
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -17,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -27,54 +24,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorInterface {
-    private final TreeMap<String, NodeInterface> nodesMap = new TreeMap<>();
-    private final ConcurrentHashMap<String, Long> nodeLastHeartbeat = new ConcurrentHashMap<>();//<nodeId,heartbeatTime>
-
+    private final ConcurrentHashMap<String, NodeInterface> nodesMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> nodeLastHeartbeat = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> tokens = new ConcurrentHashMap<>();
-
-    private final ReentrantLock fileLock = new ReentrantLock();
-
-    private final long heartbeatTimeout=1000; // in milliseconds
-
-    private static final String USERS_FILE = "src/coordinator/users.json";
-
-    private final ScheduledExecutorService heartBeatScheduler = Executors.newScheduledThreadPool(1);// thread used to check heartbeats periodically
-
-
+    private final long heartbeatTimeout = 1000;
+    private final ScheduledExecutorService heartBeatScheduler = Executors.newScheduledThreadPool(1);
     private final AtomicInteger addFileNodeIndex = new AtomicInteger(-1);
-
-
+    private final ReentrantLock fileLock = new ReentrantLock();
+    private static final String USERS_FILE = "src/coordinator/users.json";
 
     protected CoordinatorImpl() throws RemoteException {
         super();
         loadUsersFromJson();
         heartBeatScheduler.scheduleAtFixedRate(this::checkDeadNodes, 0, 1, TimeUnit.SECONDS);
     }
-    private void checkDeadNodes() {// this method is used by heartBeateScheduler thread
-        long currentTime = System.currentTimeMillis();
-        for (Map.Entry<String, Long> entry : nodeLastHeartbeat.entrySet()) {
-            if (currentTime - entry.getValue() > heartbeatTimeout) {
-                System.out.println("Node " + entry.getKey() + " is dead");
-                nodeLastHeartbeat.remove(entry.getKey());
-            }
-        }
-    }
-
-    public synchronized void receiveHeartbeat(String nodeId) throws RemoteException{// Called by nodes to send heartbeats
-        nodeLastHeartbeat.put(nodeId, System.currentTimeMillis());
-        System.out.println("received a heartbeat from nodeID :  "+ nodeId);
-    }
-
-    @Override
-    public void RegisterNode(String nodeId, NodeInterface node) throws RemoteException {
-        nodesMap.put(nodeId, node);
-        nodeLastHeartbeat.put(nodeId, System.currentTimeMillis());
-        System.out.println("Registered node with ID: " + nodeId);
-//        printAllNodes();
-    }
-
-
 
     private void loadUsersFromJson() {
         fileLock.lock();
@@ -86,6 +50,7 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
                     for (int i = 0; i < jsonArray.length(); i++) {
                         JSONObject jsonUser = jsonArray.getJSONObject(i);
                         String username = jsonUser.getString("username");
+                        String email = jsonUser.getString("email");
                         String department = jsonUser.getString("department");
                         String hashedPassword = jsonUser.getString("password");
                         JSONArray jsonPermissions = jsonUser.getJSONArray("permissions");
@@ -93,7 +58,7 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
                         for (int j = 0; j < jsonPermissions.length(); j++) {
                             permissions.add(jsonPermissions.getString(j));
                         }
-                        users.put(username, new User(username, department, permissions, hashedPassword));
+                        users.put(email, new User(username, email, department, permissions, hashedPassword));
                     }
                     System.out.println("Loaded " + jsonArray.length() + " users from " + USERS_FILE);
                 }
@@ -107,15 +72,17 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         }
     }
 
-    private void saveUsersToJson() {
+    @Override
+    public void saveUsersToJson() {
         fileLock.lock();
         try {
             JSONArray jsonArray = new JSONArray();
-            users.forEach((username, user) -> {
+            users.forEach((email, user) -> {
                 JSONObject jsonUser = new JSONObject();
-                jsonUser.put("username", username);
+                jsonUser.put("username", user.getUsername());
+                jsonUser.put("email", email);
                 jsonUser.put("department", user.getDepartment());
-                jsonUser.put("password", user.getPassword()); // Store hashed password
+                jsonUser.put("password", user.getPassword());
                 jsonUser.put("permissions", new JSONArray(user.getPermissions()));
                 jsonArray.put(jsonUser);
             });
@@ -131,38 +98,45 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
     }
 
     @Override
-    public String login(String username, String password) throws RemoteException {
-        System.out.println("Login function active.....");
-        User user = users.get(username);
-        if (user != null && BCrypt.checkpw(password, user.getPassword())) {
-            String token = UUID.randomUUID().toString();
-            tokens.put(token, username);
-            System.out.println("Login successful for user: " + username);
-            return token;
-        } else {
-            System.out.println("Invalid username or password");
-            if (user == null) {
-                System.out.println("User not found: " + username);
-            } else {
-                System.out.println("Password mismatch for user: " + username);
-            }
-        }
-        return null;
+    public void addUser(String email, User newUser){
+        users.put(email, newUser);
     }
 
     @Override
-    public boolean registerUser(String username, String password, String department, Set<String> permissions) throws RemoteException {
-        if (users.containsKey(username)) {
-            System.out.println("User " + username + " already exists");
-            return false;
-        }
-        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt());
-        users.put(username, new User(username, department, permissions, hashedPassword));
-        saveUsersToJson();
-        System.out.println("Added new user successfully: " + username);
-        return true;
+    public ConcurrentHashMap<String, User> getUsers() {
+        return users;
+    }
+    public ConcurrentHashMap<String, String> getTokens() {
+        return tokens;
     }
 
+    private void checkDeadNodes() {
+        long currentTime = System.currentTimeMillis();
+        nodeLastHeartbeat.forEachEntry(1, entry -> {
+            if (currentTime - entry.getValue() > heartbeatTimeout) {
+                System.out.println("Node " + entry.getKey() + " is dead");
+                nodesMap.remove(entry.getKey());
+                nodeLastHeartbeat.remove(entry.getKey());
+            }
+        });
+    }
+
+    @Override
+    public void receiveHeartbeat(String nodeId) throws RemoteException {
+        nodeLastHeartbeat.put(nodeId, System.currentTimeMillis());
+        System.out.println("Received heartbeat from nodeID: " + nodeId);
+    }
+
+    @Override
+    public void RegisterNode(String nodeId, NodeInterface node) throws RemoteException {
+        nodesMap.put(nodeId, node);
+        nodeLastHeartbeat.put(nodeId, System.currentTimeMillis());
+        System.out.println("Registered node with ID: " + nodeId);
+    }
+
+
+
+    @Override
     public boolean addFile(String token, String name, String department, byte[] content) throws RemoteException {
         User user = validateToken(token);
         if (user == null || !user.hasPermission("add") || !user.getDepartment().equals(department)) {
@@ -206,36 +180,31 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         String username = tokens.get(token);
         return username != null ? users.get(username) : null;
     }
-
-
-    // helper methods.
-    private void registerRequest(NodeInterface pickedNode) {
-
+    @Override
+     public void addToken(String token,String email) {
+        tokens.put(token, email);
     }
+
+    @Override
+    public Set<String> getUserPermissions(String token) throws RemoteException {
+        User user = validateToken(token);
+        if (user == null) {
+            System.out.println("Invalid token for permission check");
+            return new HashSet<>();
+        }
+
+        System.out.println(user.getPermissions());
+        return user.getPermissions();
+    }
+
     private NodeInterface pickNodeToAddFile() throws RemoteException {
-        if (nodesMap.isEmpty()) {
+        List<NodeInterface> aliveNodes = getAliveNodes();
+        if (aliveNodes.isEmpty()) {
             throw new RemoteException("No nodes available to add file");
         }
-
-        // Convert keys to array for round-robin selection
-        String[] nodeKeys = nodesMap.keySet().toArray(new String[0]);
-
-        // Get next node in round-robin fashion
-        int nextIndex = addFileNodeIndex.incrementAndGet() % nodeKeys.length;
-        if (nextIndex < 0) { // Handle potential negative values
-            nextIndex += nodeKeys.length;
-        }
-
-        String selectedNodeKey = nodeKeys[nextIndex];
-        return nodesMap.get(selectedNodeKey);
+        int nextIndex = addFileNodeIndex.incrementAndGet() % aliveNodes.size();
+        return aliveNodes.get(nextIndex);
     }
-
-    public void printAllNodes() {
-        System.out.println("Registered nodes (sorted by key):");
-        nodesMap.forEach((key, node) ->
-                System.out.println("Node ID: " + key + " -> " + node));
-    }
-
 
     private List<NodeInterface> getAliveNodes() {
         List<NodeInterface> aliveNodes = new ArrayList<>();

@@ -13,16 +13,15 @@ public class Main {
 
     public static void main(String[] args) {
         try {
-            CoordinatorInterface c = (CoordinatorInterface) Naming.lookup("rmi://localhost:1099/mainCoordinator");
-            Employee e = new Employee(c);
-            System.out.println("Client started");
-
-            // تسجيل الدخول
-            System.out.print("Username: ");
-            String username = scanner.nextLine();
-            System.out.print("Password: ");
-            String password = scanner.nextLine();
-            if (!e.login(username, password)) {
+            CoordinatorInterface coordinator = (CoordinatorInterface) Naming.lookup("rmi://localhost:1099/mainCoordinator");
+            Employee e = new Employee(coordinator);
+            Scanner sc = new Scanner(System.in);
+            System.out.println("Enter email:");
+            String email = sc.nextLine();
+            System.out.println("Enter password:");
+            String password = sc.nextLine();
+            System.out.println("Attempting login for: " + email);
+            if (!e.login(email, password)) {
                 System.out.println("Login failed!");
                 return;
             }

@@ -1,10 +1,35 @@
-[{
-  "password": "$2a$10$02ERCroDblY4ijOBhCW1subYcgjNSPiQnG2rw4bgLOihzOvl321nm",
-  "permissions": [
-    "add",
-    "delete",
-    "read"
-  ],
-  "department": "it",
-  "username": "ali"
-}]
+[
+  {
+    "password": "$2a$10$3rJZTUXzQ92/qmBlRHrDXuli.ASWW3/SANVN8yKa2Upsxc1dzBB72",
+    "permissions": [
+      "add",
+      "delete"
+    ],
+    "department": "it",
+    "email": "ali@gmail.com",
+    "username": "ali"
+  },
+  {
+    "password": "$2a$10$YendHCddxNO8x3GXr384kuLPNKzgUrasx/347lbPNhdc0/8bPe8Mq",
+    "permissions": [
+      "add",
+      "read",
+      "delete"
+    ],
+    "department": "design",
+    "email": "mhmd@gmail.com",
+    "username": "mhmd"
+  },
+  {
+    "password": "$2a$10$l0oKmOFK3gQBKd6S6sGvr.im84xYMN7rPEGhJrqx/2oMQAZ00J84m",
+    "permissions": [
+      "add",
+      "read",
+      "manage_users",
+      "delete"
+    ],
+    "department": "manager",
+    "email": "manager@gmail.com",
+    "username": "manager"
+  }
+]
