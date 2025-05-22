@@ -8,4 +8,6 @@ public interface NodeInterface extends Remote {
     boolean deleteFile(String name, String department) throws RemoteException;
     FileInfo getFile(String name, String department) throws RemoteException;
     boolean isAlive() throws RemoteException;
+
+    void doSomething() throws RemoteException;
 }

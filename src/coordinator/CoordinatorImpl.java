@@ -26,11 +26,13 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorInterface {
     private final ConcurrentHashMap<String, NodeInterface> nodesMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> nodeLastHeartbeat = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, List<AtomicInteger>> pendingRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> tokens = new ConcurrentHashMap<>();
     private final long heartbeatTimeout = 1000;
     private final ScheduledExecutorService heartBeatScheduler = Executors.newScheduledThreadPool(1);
     private final AtomicInteger addFileNodeIndex = new AtomicInteger(-1);
+    private final AtomicInteger RequestId = new AtomicInteger(-1);
     private final ReentrantLock fileLock = new ReentrantLock();
     private static final String USERS_FILE = "src/coordinator/users.json";
 
@@ -124,7 +126,7 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
     @Override
     public void receiveHeartbeat(String nodeId) throws RemoteException {
         nodeLastHeartbeat.put(nodeId, System.currentTimeMillis());
-        System.out.println("Received heartbeat from nodeID: " + nodeId);
+//        System.out.println("Received heartbeat from nodeID: " + nodeId);
     }
 
     @Override
@@ -142,8 +144,9 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         if (user == null || !user.hasPermission("add") || !user.getDepartment().equals(department)) {
             return false;
         }
-        NodeInterface node = pickNodeToAddFile();
-        return node != null && node.addFile(name, department, content);
+        String nodeID = pickNodeToAddFile();
+
+        return nodeID != null && nodesMap.get(nodeID).addFile(name, department, content);
     }
 
     @Override
@@ -197,7 +200,9 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         return user.getPermissions();
     }
 
-    private NodeInterface pickNodeToAddFile() throws RemoteException {
+
+
+    private String pickNodeToAddFile() throws RemoteException {
         if (nodesMap.isEmpty()) {
             throw new RemoteException("No nodes available to add file");
         }
@@ -208,10 +213,22 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         if (nextIndex < 0) { // Handle potential negative values
             nextIndex += nodeKeys.length;
         }
-
         String selectedNodeKey = nodeKeys[nextIndex];
-        return nodesMap.get(selectedNodeKey);
+        System.out.println("selected node is "+selectedNodeKey);
+        return selectedNodeKey;
     }
+
+
+
+
+    public void doSomething() throws  RemoteException{
+        String nodeID=pickNodeToAddFile();
+        nodesMap.get(nodeID).doSomething();
+        //add it to a map of order,nodeId
+    }
+
+
+
 
     private List<NodeInterface> getAliveNodes() {
         List<NodeInterface> aliveNodes = new ArrayList<>();
@@ -227,4 +244,6 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         }
         return aliveNodes;
     }
+
+
 }

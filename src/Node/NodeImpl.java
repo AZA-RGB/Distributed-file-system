@@ -1,5 +1,6 @@
 package Node;
 
+import Node.services.DoSomethingService;
 import common.CoordinatorInterface;
 import common.FileInfo;
 import common.NodeInterface;
@@ -131,9 +132,16 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
     }
 
     @Override
+    public void doSomething() throws RemoteException {
+        new DoSomethingService().execute();
+    }
+
+    @Override
     public boolean isAlive() throws RemoteException {
         return false;
     }
+
+
 
     public String getNodeId() {
         return NodeId;
