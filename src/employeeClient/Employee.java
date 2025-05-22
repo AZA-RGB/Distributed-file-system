@@ -16,11 +16,11 @@ public class Employee {
         this.coordinator = c;
     }
 
-    public boolean login(String email, String password) throws RemoteException {
-        System.out.println("Employee: Calling login for user: " + email + ", password: " + password);
+    public boolean login() throws RemoteException {
         try {
+            System.out.println("Login Manager");
             LoginService loginService = new LoginService(coordinator);
-            token = loginService.execute(email, password);
+            token = loginService.execute();
             System.out.println("Employee: Login returned token: " + (token != null ? token : "null"));
         } catch (RemoteException e) {
             System.err.println("Employee: RMI error during login: " + e.getMessage());

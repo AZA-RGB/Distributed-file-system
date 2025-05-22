@@ -1,5 +1,12 @@
 [
   {
+    "password": "$2a$10$bLJ61kaH4yFnDF.WKHmHBejxTvybn0kyyQXSCQs3bw8nZsuFj8Y86",
+    "permissions": ["read"],
+    "department": "it",
+    "email": "k@gmail.com",
+    "username": "kamal"
+  },
+  {
     "password": "$2a$10$3rJZTUXzQ92/qmBlRHrDXuli.ASWW3/SANVN8yKa2Upsxc1dzBB72",
     "permissions": [
       "add",

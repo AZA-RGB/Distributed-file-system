@@ -15,13 +15,8 @@ public class Main {
         try {
             CoordinatorInterface coordinator = (CoordinatorInterface) Naming.lookup("rmi://localhost:1099/mainCoordinator");
             Employee e = new Employee(coordinator);
-            Scanner sc = new Scanner(System.in);
-            System.out.println("Enter email:");
-            String email = sc.nextLine();
-            System.out.println("Enter password:");
-            String password = sc.nextLine();
-            System.out.println("Attempting login for: " + email);
-            if (!e.login(email, password)) {
+
+            if (!e.login()) {
                 System.out.println("Login failed!");
                 return;
             }

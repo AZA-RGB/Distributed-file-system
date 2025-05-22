@@ -15,14 +15,8 @@ public class Main {
         try {
             CoordinatorInterface c = (CoordinatorInterface) Naming.lookup("rmi://localhost:1099/mainCoordinator");
             Manager m = new Manager(c);
-            System.out.println("Manager client started");
 
-            // تسجيل الدخول
-            System.out.print("email: ");
-            String email = scanner.nextLine();
-            System.out.print("Password: ");
-            String password = scanner.nextLine();
-            if (!m.login(email, password)) {
+            if (!m.login()) {
                 System.out.println("Login failed!");
                 return;
             }
