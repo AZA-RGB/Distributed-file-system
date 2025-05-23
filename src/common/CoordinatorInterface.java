@@ -11,13 +11,12 @@ public interface CoordinatorInterface extends Remote {
     boolean addFile(String token, String name, String department, byte[] content) throws RemoteException;
     boolean deleteFile(String token, String name, String department) throws RemoteException;
     FileInfo getFile(String token, String name, String department) throws RemoteException;
+    boolean editFile(String token, String name, String department, byte[] content) throws RemoteException;
+
     Set<String> getUserPermissions(String token) throws RemoteException;
     ConcurrentHashMap<String, User> getUsers() throws RemoteException;
     void saveUsersToJson() throws RemoteException;
     void addToken(String token,String email) throws RemoteException;
     void addUser(String email, User newUser) throws RemoteException;
-
-
-    void doSomething() throws RemoteException, InterruptedException;
-
+    String getDepartment(String token) throws  RemoteException;
 }

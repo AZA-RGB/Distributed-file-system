@@ -1,6 +1,7 @@
 package employeeClient;
 
-import Node.services.LoginService;
+import Node.services.*;
+import common.ConsoleColors;
 import common.CoordinatorInterface;
 import common.FileInfo;
 
@@ -16,11 +17,12 @@ public class Employee {
         this.coordinator = c;
     }
 
-    public boolean login(String email, String password) throws RemoteException {
-        System.out.println("Employee: Calling login for user: " + email + ", password: " + password);
+    public boolean login() throws RemoteException {
         try {
+            System.out.println(ConsoleColors.createBorderedMessage(
+                    "Login Employee", ConsoleColors.CYAN, "", ConsoleColors.BOLD));
             LoginService loginService = new LoginService(coordinator);
-            token = loginService.execute(email, password);
+            token = loginService.execute();
             System.out.println("Employee: Login returned token: " + (token != null ? token : "null"));
         } catch (RemoteException e) {
             System.err.println("Employee: RMI error during login: " + e.getMessage());
@@ -35,24 +37,37 @@ public class Employee {
         return token != null;
     }
 
-    public void addFile(String name, String department, byte[] content) throws RemoteException {
-        if (coordinator.addFile(token, name, department, content)) {
+    public void addFile() throws RemoteException {
+        AddFileService addFileService = new AddFileService(coordinator);
+        if (addFileService.execute(token)) {
             System.out.println("File added successfully!");
         } else {
             System.out.println("Failed to add file!");
         }
     }
 
-    public void deleteFile(String name, String department) throws RemoteException {
-        if (coordinator.deleteFile(token, name, department)) {
+    public void editFile() throws RemoteException {
+        EditFileService editFileService = new EditFileService(coordinator);
+
+        if (editFileService.execute(token)) {
+            System.out.println("File added successfully!");
+        } else {
+            System.out.println("Failed to add file!");
+        }
+    }
+
+    public void deleteFile() throws RemoteException {
+        DeleteFileService deleteFileService = new DeleteFileService(coordinator);
+        if (deleteFileService.execute(token)) {
             System.out.println("File deleted successfully!");
         } else {
             System.out.println("Failed to delete file!");
         }
     }
 
-    public void getFile(String name, String department) throws RemoteException {
-        FileInfo file = coordinator.getFile(token, name, department);
+    public void getFile() throws RemoteException {
+        GetFileService getFileService = new GetFileService(coordinator);
+        FileInfo file = getFileService.execute(token);
         if (file != null) {
             System.out.println("File: " + file + ", Content: " + new String(file.getContent()));
         } else {

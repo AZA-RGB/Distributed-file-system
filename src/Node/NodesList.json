@@ -8,7 +8,11 @@
     "node_id": "2"
   },
   {
-    "storagePath": "NodeStorage-11",
-    "node_id": "11"
+    "storagePath": "NodeStorage-4",
+    "node_id": "4"
+  },
+  {
+    "storagePath": "NodeStorage-3",
+    "node_id": "3"
   }
 ]

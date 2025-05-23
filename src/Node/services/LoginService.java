@@ -6,6 +6,7 @@ import coordinator.CoordinatorImpl;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.rmi.RemoteException;
+import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,9 +17,14 @@ public class LoginService {
         this.coordinator = coordinator;
     }
 
-    public String execute(String email, String password) throws RemoteException {
-        System.out.println("Login function active.....");
+    public String execute() throws RemoteException {
         ConcurrentHashMap<String, User> users = (coordinator).getUsers();
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Enter email:");
+        String email = sc.nextLine();
+        System.out.println("Enter password:");
+        String password = sc.nextLine();
+        System.out.println("Attempting login for: " + email);
         User user = users.get(email);
         if (user != null && BCrypt.checkpw(password, user.getPassword())) {
             String token = UUID.randomUUID().toString();

@@ -178,9 +178,32 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         return null;
     }
 
+
+    @Override
+    public boolean editFile(String token, String name, String department, byte[] content) throws RemoteException {
+        User user = validateToken(token);
+        if (user == null || !user.hasPermission("edit") || !user.getDepartment().equals(department)) {
+            return false;
+        }
+        boolean success = false;
+        for (NodeInterface node : getAliveNodes()) {
+            if (node.editFile(name, department, content)) {
+                success = true;
+            }
+        }
+        return success;
+    }
+
+
     private User validateToken(String token) {
         String username = tokens.get(token);
         return username != null ? users.get(username) : null;
+    }
+
+@Override
+    public String getDepartment(String token) {
+        User user = validateToken(token);
+        return user.getDepartment();
     }
     @Override
      public void addToken(String token,String email) {
