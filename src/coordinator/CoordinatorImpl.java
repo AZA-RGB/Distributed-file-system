@@ -180,6 +180,12 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         String username = tokens.get(token);
         return username != null ? users.get(username) : null;
     }
+
+@Override
+    public String getDepartment(String token) {
+        User user = validateToken(token);
+        return user.getDepartment();
+    }
     @Override
      public void addToken(String token,String email) {
         tokens.put(token, email);

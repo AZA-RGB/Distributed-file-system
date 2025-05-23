@@ -1,5 +1,8 @@
 package employeeClient;
 
+import Node.services.AddFileService;
+import Node.services.DeleteFileService;
+import Node.services.GetFileService;
 import Node.services.LoginService;
 import common.CoordinatorInterface;
 import common.FileInfo;
@@ -35,24 +38,27 @@ public class Employee {
         return token != null;
     }
 
-    public void addFile(String name, String department, byte[] content) throws RemoteException {
-        if (coordinator.addFile(token, name, department, content)) {
+    public void addFile() throws RemoteException {
+        AddFileService addFileService = new AddFileService(coordinator);
+        if (addFileService.execute(token)) {
             System.out.println("File added successfully!");
         } else {
             System.out.println("Failed to add file!");
         }
     }
 
-    public void deleteFile(String name, String department) throws RemoteException {
-        if (coordinator.deleteFile(token, name, department)) {
+    public void deleteFile() throws RemoteException {
+        DeleteFileService deleteFileService = new DeleteFileService(coordinator);
+        if (deleteFileService.execute(token)) {
             System.out.println("File deleted successfully!");
         } else {
             System.out.println("Failed to delete file!");
         }
     }
 
-    public void getFile(String name, String department) throws RemoteException {
-        FileInfo file = coordinator.getFile(token, name, department);
+    public void getFile() throws RemoteException {
+        GetFileService getFileService = new GetFileService(coordinator);
+        FileInfo file = getFileService.execute(token);
         if (file != null) {
             System.out.println("File: " + file + ", Content: " + new String(file.getContent()));
         } else {

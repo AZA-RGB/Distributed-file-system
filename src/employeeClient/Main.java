@@ -34,27 +34,13 @@ public class Main {
 
                 switch (choice) {
                     case 1:
-                        System.out.print("File name: ");
-                        String name = scanner.nextLine();
-                        System.out.print("Department: ");
-                        String dept = scanner.nextLine();
-                        System.out.print("Content: ");
-                        String content = scanner.nextLine();
-                        e.addFile(name, dept, content.getBytes());
+                        e.addFile();
                         break;
                     case 2:
-                        System.out.print("File name: ");
-                        name = scanner.nextLine();
-                        System.out.print("Department: ");
-                        dept = scanner.nextLine();
-                        e.deleteFile(name, dept);
+                        e.deleteFile();
                         break;
                     case 3:
-                        System.out.print("File name: ");
-                        name = scanner.nextLine();
-                        System.out.print("Department: ");
-                        dept = scanner.nextLine();
-                        e.getFile(name, dept);
+                        e.getFile();
                         break;
                     case 4:
                         System.out.println("Exiting...");
