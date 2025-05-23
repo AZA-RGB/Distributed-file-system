@@ -212,7 +212,22 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
         }
         return fileInfo;
     }
-
+    @Override
+    public boolean editFile(String name, String department, byte[] content) throws RemoteException {
+        Map<String, FileInfo> deptFiles = files.get(department);
+        if (deptFiles != null) {
+            FileInfo existingFile = deptFiles.get(name);
+            if (existingFile != null) {
+                FileInfo updatedFile = new FileInfo(name, department, content);
+                deptFiles.put(name, updatedFile);
+                saveFilesToJson(); // Save to JSON after editing
+                System.out.println("Edited file " + name + " in department " + department + " on node " + nodeId);
+                return true;
+            }
+        }
+        System.out.println("Failed to edit file " + name + " in department " + department + " on node " + nodeId + ": File or department not found");
+        return false;
+    }
     @Override
     public boolean isAlive() throws RemoteException {
         return true;

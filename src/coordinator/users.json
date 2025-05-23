@@ -21,7 +21,8 @@
     "permissions": [
       "add",
       "read",
-      "delete"
+      "delete",
+      "edit"
     ],
     "department": "design",
     "email": "mhmd@gmail.com",
@@ -32,6 +33,7 @@
     "permissions": [
       "add",
       "read",
+      "edit",
       "manage_users",
       "delete"
     ],

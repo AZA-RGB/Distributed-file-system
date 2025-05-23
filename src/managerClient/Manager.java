@@ -2,6 +2,7 @@ package managerClient;
 
 import Node.services.LoginService;
 import Node.services.RegisterService;
+import common.ConsoleColors;
 import common.CoordinatorInterface;
 
 import java.rmi.RemoteException;
@@ -19,7 +20,8 @@ public class Manager {
     }
 
     public boolean login() throws RemoteException {
-        System.out.println("Login Manager");
+        System.out.println(ConsoleColors.createBorderedMessage(
+                "Login Manager", ConsoleColors.GREEN, "", ConsoleColors.BOLD));
         LoginService loginService = new LoginService(coordinator);
         token = loginService.execute();
         Set<String> permissions = coordinator.getUserPermissions(token);

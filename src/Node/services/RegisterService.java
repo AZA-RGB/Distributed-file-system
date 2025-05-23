@@ -1,5 +1,6 @@
 package Node.services;
 
+import common.ConsoleColors;
 import common.CoordinatorInterface;
 import common.User;
 import coordinator.CoordinatorImpl;
@@ -33,12 +34,18 @@ public class RegisterService {
         String department = scanner.nextLine();
 
         // Prompt for permission set
-        System.out.println("Select permission set:");
-        System.out.println("1. Full Access (add, delete, read)");
-        System.out.println("2. Write Only (add, delete)");
-        System.out.println("3. Read Only (read)");
-        System.out.println("4. Custom (select individual permissions)");
-        System.out.print("Enter choice (1-4): ");
+        System.out.println("\n" + ConsoleColors.createBorderedMessage(
+                "Select permission set", ConsoleColors.CYAN, "", ConsoleColors.BOLD));
+        System.out.println(ConsoleColors.format(
+                "1. Full Access (add, delete, read, edit)", ConsoleColors.BLUE, "", ""));
+        System.out.println(ConsoleColors.format(
+                "2. Write Only (add, delete, edit)", ConsoleColors.BLUE, "", ""));
+        System.out.println(ConsoleColors.format(
+                "3. Read Only (read)", ConsoleColors.BLUE, "", ""));
+        System.out.println(ConsoleColors.format(
+                "4. Custom (select individual permissions)", ConsoleColors.BLUE, "", ""));
+        System.out.print(ConsoleColors.format(
+                "Enter choice (1-4): ", ConsoleColors.YELLOW, "", ""));
 
         Set<String> newUserPermissions = new HashSet<>();
         String choice = scanner.nextLine();
@@ -48,11 +55,13 @@ public class RegisterService {
                 newUserPermissions.add("add");
                 newUserPermissions.add("delete");
                 newUserPermissions.add("read");
+                newUserPermissions.add("edit");
                 System.out.println("Selected Full Access permissions");
                 break;
             case "2":
                 newUserPermissions.add("add");
                 newUserPermissions.add("delete");
+                newUserPermissions.add("edit");
                 System.out.println("Selected Write Only permissions");
                 break;
             case "3":
@@ -67,7 +76,7 @@ public class RegisterService {
                     if (perm.equals("done")) {
                         break;
                     }
-                    if (perm.equals("add") || perm.equals("delete") || perm.equals("read")) {
+                    if (perm.equals("add") ||perm.equals("edit")|| perm.equals("delete") || perm.equals("read")) {
                         newUserPermissions.add(perm);
                         System.out.println("Added permission: " + perm);
                     } else {

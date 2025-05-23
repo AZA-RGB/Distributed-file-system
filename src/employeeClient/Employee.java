@@ -1,9 +1,7 @@
 package employeeClient;
 
-import Node.services.AddFileService;
-import Node.services.DeleteFileService;
-import Node.services.GetFileService;
-import Node.services.LoginService;
+import Node.services.*;
+import common.ConsoleColors;
 import common.CoordinatorInterface;
 import common.FileInfo;
 
@@ -21,7 +19,8 @@ public class Employee {
 
     public boolean login() throws RemoteException {
         try {
-            System.out.println("Login Manager");
+            System.out.println(ConsoleColors.createBorderedMessage(
+                    "Login Employee", ConsoleColors.CYAN, "", ConsoleColors.BOLD));
             LoginService loginService = new LoginService(coordinator);
             token = loginService.execute();
             System.out.println("Employee: Login returned token: " + (token != null ? token : "null"));
@@ -41,6 +40,16 @@ public class Employee {
     public void addFile() throws RemoteException {
         AddFileService addFileService = new AddFileService(coordinator);
         if (addFileService.execute(token)) {
+            System.out.println("File added successfully!");
+        } else {
+            System.out.println("Failed to add file!");
+        }
+    }
+
+    public void editFile() throws RemoteException {
+        EditFileService editFileService = new EditFileService(coordinator);
+
+        if (editFileService.execute(token)) {
             System.out.println("File added successfully!");
         } else {
             System.out.println("Failed to add file!");

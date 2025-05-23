@@ -1,5 +1,6 @@
 package managerClient;
 
+import common.ConsoleColors;
 import common.CoordinatorInterface;
 
 import java.net.MalformedURLException;
@@ -20,13 +21,16 @@ public class Main {
                 System.out.println("Login failed!");
                 return;
             }
-
             // واجهة تفاعلية
             while (true) {
-                System.out.println("\nOptions:");
-                System.out.println("1. Register User");
-                System.out.println("2. Exit");
-                System.out.print("Choose an option: ");
+                System.out.println("\n" + ConsoleColors.createBorderedMessage(
+                        "Options", ConsoleColors.CYAN, "", ConsoleColors.BOLD));
+                System.out.println(ConsoleColors.format(
+                        "1. Register User", ConsoleColors.BLUE, "", ""));
+                System.out.println(ConsoleColors.format(
+                        "2. Exit", ConsoleColors.BLUE, "", ""));
+                System.out.print(ConsoleColors.format(
+                        "Choose an option: ", ConsoleColors.YELLOW, "", ""));
                 int choice = scanner.nextInt();
                 scanner.nextLine();
 
