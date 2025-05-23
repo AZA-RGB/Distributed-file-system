@@ -37,7 +37,7 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
-        },0, 500, TimeUnit.MILLISECONDS);
+        },0, 50, TimeUnit.MILLISECONDS);
     }
 
 
@@ -132,7 +132,8 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
     }
 
     @Override
-    public void doSomething() throws RemoteException {
+    public void doSomething() throws RemoteException, InterruptedException {
+        Thread.sleep(2000);
         new DoSomethingService().execute();
     }
 

@@ -18,6 +18,6 @@ public interface CoordinatorInterface extends Remote {
     void addUser(String email, User newUser) throws RemoteException;
 
 
-    void doSomething() throws RemoteException;
+    void doSomething() throws RemoteException, InterruptedException;
 
 }

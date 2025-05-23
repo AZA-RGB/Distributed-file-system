@@ -1,4 +1,14 @@
-[{
-  "storagePath": "NodeStorage-1",
-  "node_id": "1"
-}]
+[
+  {
+    "storagePath": "NodeStorage-1",
+    "node_id": "1"
+  },
+  {
+    "storagePath": "NodeStorage-2",
+    "node_id": "2"
+  },
+  {
+    "storagePath": "NodeStorage-11",
+    "node_id": "11"
+  }
+]

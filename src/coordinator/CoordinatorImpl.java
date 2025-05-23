@@ -8,6 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import javax.imageio.stream.ImageInputStreamImpl;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -16,30 +17,26 @@ import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Function;
 
 public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorInterface {
     private final ConcurrentHashMap<String, NodeInterface> nodesMap = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Long> nodeLastHeartbeat = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, List<AtomicInteger>> pendingRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> tokens = new ConcurrentHashMap<>();
     private final long heartbeatTimeout = 1000;
     private final ScheduledExecutorService heartBeatScheduler = Executors.newScheduledThreadPool(1);
     private final AtomicInteger addFileNodeIndex = new AtomicInteger(-1);
-    private final AtomicInteger RequestId = new AtomicInteger(-1);
     private final ReentrantLock fileLock = new ReentrantLock();
     private static final String USERS_FILE = "src/coordinator/users.json";
 
     protected CoordinatorImpl() throws RemoteException {
         super();
         loadUsersFromJson();
-        heartBeatScheduler.scheduleAtFixedRate(this::checkDeadNodes, 0, 1, TimeUnit.SECONDS);
+        heartBeatScheduler.scheduleAtFixedRate(this::checkDeadNodes, 0, 100, TimeUnit.MILLISECONDS);
     }
 
     private void loadUsersFromJson() {
@@ -115,6 +112,8 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
     private void checkDeadNodes() {
         long currentTime = System.currentTimeMillis();
         nodeLastHeartbeat.forEachEntry(1, entry -> {
+//            System.out.println(pendingRequests.get( entry.getKey()));
+
             if (currentTime - entry.getValue() > heartbeatTimeout) {
                 System.out.println("Node " + entry.getKey() + " is dead");
                 nodesMap.remove(entry.getKey());
@@ -221,12 +220,12 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
 
 
 
-    public void doSomething() throws  RemoteException{
-        String nodeID=pickNodeToAddFile();
-        nodesMap.get(nodeID).doSomething();
-        //add it to a map of order,nodeId
+    public void doSomething() throws RemoteException {
+        RetryUtil.retryWithSleep(() -> {
+            String nodeID = pickNodeToAddFile();
+            nodesMap.get(nodeID).doSomething();
+        });
     }
-
 
 
 

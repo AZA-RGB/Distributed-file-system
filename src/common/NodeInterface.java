@@ -9,5 +9,5 @@ public interface NodeInterface extends Remote {
     FileInfo getFile(String name, String department) throws RemoteException;
     boolean isAlive() throws RemoteException;
 
-    void doSomething() throws RemoteException;
+    void doSomething() throws RemoteException, InterruptedException;
 }
