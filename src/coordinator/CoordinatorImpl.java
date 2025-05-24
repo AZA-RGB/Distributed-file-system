@@ -1,5 +1,6 @@
 package coordinator;
 
+import com.sun.source.tree.Tree;
 import common.CoordinatorInterface;
 import common.FileInfo;
 import common.NodeInterface;
@@ -27,6 +28,7 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
     private final ConcurrentHashMap<String, Long> nodeLastHeartbeat = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, User> users = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, String> tokens = new ConcurrentHashMap<>();
+    private Map<String, Integer> nodesLoad = new HashMap<>();
     private final long heartbeatTimeout = 1000;
     private final ScheduledExecutorService heartBeatScheduler = Executors.newScheduledThreadPool(1);
     private final AtomicInteger addFileNodeIndex = new AtomicInteger(-1);
@@ -118,6 +120,7 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
                 System.out.println("Node " + entry.getKey() + " is dead");
                 nodesMap.remove(entry.getKey());
                 nodeLastHeartbeat.remove(entry.getKey());
+                nodesLoad.remove(entry.getKey());
             }
         });
     }
@@ -132,6 +135,7 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
     public void RegisterNode(String nodeId, NodeInterface node) throws RemoteException {
         nodesMap.put(nodeId, node);
         nodeLastHeartbeat.put(nodeId, System.currentTimeMillis());
+        nodesLoad.put(nodeId,0);
         System.out.println("Registered node with ID: " + nodeId);
     }
 
@@ -242,13 +246,40 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
 
 
 
+    private String pickNodeLoadBalance(){
+        String leastLoadedNode = null;
+        int minLoad = Integer.MAX_VALUE;
+        for (Map.Entry<String, Integer> entry : nodesLoad.entrySet()) {
+            String nodeId = entry.getKey();
+            int load = entry.getValue();
+            if (load < minLoad) {
+                minLoad = load;
+                leastLoadedNode = nodeId;
+            }
+        }
+
+        if (leastLoadedNode != null) {
+            nodesLoad.compute(leastLoadedNode, (k, v) -> v + 1);
+            System.out.println("load balancer chose node: " + leastLoadedNode);
+            return leastLoadedNode;
+        } else {
+            System.out.println("No nodes available to handle task.");
+            return null;
+        }
+    }
+    @Override
+    public void deLoad(String nodeId) throws RemoteException {
+        nodesLoad.computeIfPresent(nodeId, (k, v) -> v > 0 ? v - 1 : 0);
+        System.out.println("Node " + nodeId + " load decreased. Current load: " + nodesLoad.get(nodeId));
+    }
 
     public void doSomething() throws RemoteException {
         RetryUtil.retryWithSleep(() -> {
-            String nodeID = pickNodeToAddFile();
+            String nodeID = pickNodeLoadBalance();
             nodesMap.get(nodeID).doSomething();
         });
     }
+
 
 
 

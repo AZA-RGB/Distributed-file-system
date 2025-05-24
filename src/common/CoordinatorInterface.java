@@ -19,4 +19,6 @@ public interface CoordinatorInterface extends Remote {
     void addToken(String token,String email) throws RemoteException;
     void addUser(String email, User newUser) throws RemoteException;
     String getDepartment(String token) throws  RemoteException;
+    void doSomething() throws RemoteException;
+    void deLoad(String nodeId) throws RemoteException;
 }

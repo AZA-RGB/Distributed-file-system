@@ -14,5 +14,9 @@
   {
     "storagePath": "NodeStorage-3",
     "node_id": "3"
+  },
+  {
+    "storagePath": "NodeStorage-11",
+    "node_id": "11"
   }
 ]
