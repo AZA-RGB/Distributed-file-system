@@ -17,12 +17,36 @@
     "username": "ali"
   },
   {
+    "password": "$2a$10$oezYHKSVYpj1cwdN.HdibeHOu4o/POACKHRMLeiwmjBLmmdqUJeaa",
+    "permissions": [
+      "add",
+      "read",
+      "edit",
+      "delete"
+    ],
+    "department": "design",
+    "email": "khaled@gmail.com",
+    "username": "khaled"
+  },
+  {
+    "password": "$2a$10$8kE7I29mcOWqFLrb.hzjh.XzemWva48vS49sfurxwoEF7JlUAvr6C",
+    "permissions": [
+      "add",
+      "read",
+      "edit",
+      "delete"
+    ],
+    "department": "design",
+    "email": "moh@gmail.com",
+    "username": "moh"
+  },
+  {
     "password": "$2a$10$YendHCddxNO8x3GXr384kuLPNKzgUrasx/347lbPNhdc0/8bPe8Mq",
     "permissions": [
       "add",
       "read",
-      "delete",
-      "edit"
+      "edit",
+      "delete"
     ],
     "department": "design",
     "email": "mhmd@gmail.com",
@@ -40,5 +64,29 @@
     "department": "manager",
     "email": "manager@gmail.com",
     "username": "manager"
+  },
+  {
+    "password": "$2a$10$uRLzSgnOykDtFhysZNVDUuIQiuj9ZDe3.IwTq/iMjD1BQyJcJxC52",
+    "permissions": [
+      "add",
+      "read",
+      "edit",
+      "delete"
+    ],
+    "department": "it",
+    "email": "mhd@gmail.com",
+    "username": "mhd"
+  },
+  {
+    "password": "$2a$10$oCRnHLPQ1nv3lBWLLJEwAud5jD8r26bWE5tSM7qIXqbgieAR2.E22",
+    "permissions": [
+      "add",
+      "read",
+      "edit",
+      "delete"
+    ],
+    "department": "it",
+    "email": "mmm@gmail.com",
+    "username": "mmm"
   }
 ]

@@ -37,6 +37,7 @@ public class Employee {
         return token != null;
     }
 
+
     public void addFile() throws RemoteException {
         AddFileService addFileService = new AddFileService(coordinator);
         if (addFileService.execute(token)) {
@@ -51,6 +52,13 @@ public class Employee {
 
         if (editFileService.execute(token)) {
             System.out.println("File added successfully!");
+            System.out.println(ConsoleColors.format(
+                    "Press Enter to unlock the file and return to the main menu: ",
+                    ConsoleColors.YELLOW, "", ""));
+            scanner.nextLine();
+            coordinator.unlockFileForWriteManually(token, editFileService.getCurrentFileName(), editFileService.getCurrentDepartment());
+            System.out.println("File unlocked successfully!");
+
         } else {
             System.out.println("Failed to add file!");
         }
@@ -60,6 +68,12 @@ public class Employee {
         DeleteFileService deleteFileService = new DeleteFileService(coordinator);
         if (deleteFileService.execute(token)) {
             System.out.println("File deleted successfully!");
+            System.out.println(ConsoleColors.format(
+                    "Press Enter to unlock the file and return to the main menu: ",
+                    ConsoleColors.YELLOW, "", ""));
+            scanner.nextLine();
+            coordinator.unlockFileForWriteManually(token, deleteFileService.getCurrentFileName(), deleteFileService.getCurrentDepartment());
+            System.out.println("File unlocked successfully!");
         } else {
             System.out.println("Failed to delete file!");
         }
@@ -70,6 +84,12 @@ public class Employee {
         FileInfo file = getFileService.execute(token);
         if (file != null) {
             System.out.println("File: " + file + ", Content: " + new String(file.getContent()));
+            System.out.println(ConsoleColors.format(
+                    "Press Enter to unlock the file and return to the main menu: ",
+                    ConsoleColors.YELLOW, "", ""));
+            scanner.nextLine();
+            coordinator.unlockFileForReadManually(token, getFileService.getCurrentFileName(), getFileService.getCurrentDepartment());
+            System.out.println("File unlocked successfully!");
         } else {
             System.out.println("File not found!");
         }

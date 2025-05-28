@@ -7,6 +7,8 @@ import java.util.Scanner;
 
 public class EditFileService {
     private final CoordinatorInterface coordinator;
+    private String currentFileName;
+    private String currentDepartment;
 
     public EditFileService(CoordinatorInterface coordinator) {
         this.coordinator = coordinator;
@@ -17,6 +19,12 @@ public class EditFileService {
         System.out.print("File name: ");
         String name = scanner.nextLine();
         String dept =  coordinator.getDepartment(token);
+        if (dept == null) {
+            System.out.println("Error: Department not found for this user!");
+            return false;
+        }
+        currentFileName = name;
+        currentDepartment = dept;
         System.out.print("Content: ");
         String content = scanner.nextLine();
         if (coordinator.editFile(token, name, dept, content.getBytes())) {
@@ -26,5 +34,12 @@ public class EditFileService {
             System.out.println("Failed to edit file!");
             return  false;
         }
+    }
+
+    public String getCurrentFileName() {
+        return currentFileName;
+    }
+    public String getCurrentDepartment() {
+        return currentDepartment;
     }
 }
