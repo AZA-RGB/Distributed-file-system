@@ -17,6 +17,10 @@ public class AddFileService {
         System.out.print("File name: ");
         String name = scanner.nextLine();
         String dept =  coordinator.getDepartment(token);
+        if (dept == null) {
+            System.out.println("Error: Department not found for this user!");
+            return false;
+        }
         System.out.print("Content: ");
         String content = scanner.nextLine();
         if (coordinator.addFile(token, name, dept, content.getBytes())) {

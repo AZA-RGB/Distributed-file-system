@@ -13,4 +13,13 @@ public interface NodeInterface extends Remote {
     boolean isAlive() throws RemoteException;
 
     void doSomething() throws RemoteException, InterruptedException;
+
+    void lockFileForRead(String name, String department) throws RemoteException;
+    void unlockFileForRead(String name, String department) throws RemoteException;
+    void lockFileForWrite(String name, String department) throws RemoteException;
+    void unlockFileForWrite(String name, String department) throws RemoteException;
+    void unlockFileForWriteManually(String name, String department) throws RemoteException;
+    void unlockFileForReadManually(String name, String department) throws RemoteException;
+    boolean isWriteLocked(String name, String department) throws RemoteException;
+
 }

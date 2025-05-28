@@ -9,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import javax.imageio.stream.ImageInputStreamImpl;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -21,7 +20,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Function;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorInterface {
     private final ConcurrentHashMap<String, NodeInterface> nodesMap = new ConcurrentHashMap<>();
@@ -34,11 +33,46 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
     private final AtomicInteger addFileNodeIndex = new AtomicInteger(-1);
     private final ReentrantLock fileLock = new ReentrantLock();
     private static final String USERS_FILE = "src/coordinator/users.json";
+    private final ConcurrentHashMap<String, ReentrantReadWriteLock> fileLocks = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, String> lockedFiles = new ConcurrentHashMap<>();    // Map to track lock status (department:name -> token)
+
+    // MODIFIED: Added lockTimeouts to handle automatic unlocking after timeout
+    private final ConcurrentHashMap<String, Long> lockTimeouts = new ConcurrentHashMap<>();
+    private final ScheduledExecutorService timeoutScheduler = Executors.newScheduledThreadPool(1);
+    private static final long LOCK_TIMEOUT_SECONDS = 300; // 5 minutes
 
     protected CoordinatorImpl() throws RemoteException {
         super();
         loadUsersFromJson();
         heartBeatScheduler.scheduleAtFixedRate(this::checkDeadNodes, 0, 100, TimeUnit.MILLISECONDS);
+        // Added timeout scheduler to check for expired locks
+        timeoutScheduler.scheduleAtFixedRate(this::checkLockTimeouts, 0, 60, TimeUnit.SECONDS);
+    }
+
+    // Added method to check and unlock expired locks
+    private void checkLockTimeouts() {
+        long currentTime = System.currentTimeMillis();
+        lockTimeouts.forEachEntry(1, entry -> {
+            if (currentTime - entry.getValue() > LOCK_TIMEOUT_SECONDS * 1000) {
+                String lockKey = entry.getKey();
+                String token = lockedFiles.get(lockKey);
+                if (token != null) {
+                    String[] parts = lockKey.split(":");
+                    String department = parts[0];
+                    String name = parts[1];
+                    try {
+                        System.out.println("Timeout expired for file " + name + " in department " + department + ", unlocking automatically...");
+                        if (lockKey.startsWith(department + ":" + name)) {
+                            unlockFileForWriteManually(token, name, department);
+                        } else {
+                            unlockFileForReadManually(token, name, department);
+                        }
+                    } catch (RemoteException e) {
+                        System.err.println("Error unlocking file " + name + " in department " + department + ": " + e.getMessage());
+                    }
+                }
+            }
+        });
     }
 
     private void loadUsersFromJson() {
@@ -147,9 +181,39 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         if (user == null || !user.hasPermission("add") || !user.getDepartment().equals(department)) {
             return false;
         }
-        String nodeID = pickNodeToAddFile();
+        String lockKey = department + ":" + name;
+        if (lockedFiles.containsKey(lockKey)) {
+            System.out.println("File " + name + " in department " + department + " is locked by another user!");
+            return false;
+        }
+        lockedFiles.put(lockKey, token);
+        lockTimeouts.put(lockKey, System.currentTimeMillis());
 
-        return nodeID != null && nodesMap.get(nodeID).addFile(name, department, content);
+
+        String nodeID = pickNodeToAddFile();
+        if (nodeID != null) {
+            ReentrantReadWriteLock lock = getFileLock(department, name);
+            lock.writeLock().lock();
+            try {
+                boolean success = nodesMap.get(nodeID).addFile(name, department, content);
+                if (success) {
+                    for (NodeInterface node : getAliveNodes()) {
+                        FileInfo file = node.getFile(name, department);
+                        if (file != null && node.isWriteLocked(name, department)) {
+                            node.unlockFileForWrite(name, department);
+                        }
+                    }
+                    lockedFiles.remove(lockKey);
+                    lockTimeouts.remove(lockKey);
+
+                }
+                return success;
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+        return false;
+
     }
 
     @Override
@@ -158,13 +222,35 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         if (user == null || !user.hasPermission("delete") || !user.getDepartment().equals(department)) {
             return false;
         }
-        boolean success = false;
-        for (NodeInterface node : getAliveNodes()) {
-            if (node.deleteFile(name, department)) {
-                success = true;
-            }
+        String lockKey = department + ":" + name;
+        if (lockedFiles.containsKey(lockKey)) {
+            System.out.println("DEBUG: File " + name + " in department " + department + " is locked by token " + lockedFiles.get(lockKey));
+            return false;
         }
-        return success;
+        lockedFiles.put(lockKey, token);
+        lockTimeouts.put(lockKey, System.currentTimeMillis());
+
+
+        ReentrantReadWriteLock lock = getFileLock(department, name);
+        lock.writeLock().lock();
+        try {
+            for (NodeInterface node : getAliveNodes()) {
+                FileInfo file = node.getFile(name, department);
+                if (file != null) {
+                    node.lockFileForWrite(name, department);
+                }
+            }
+            // Delete on all nodes
+            boolean success = false;
+            for (NodeInterface node : getAliveNodes()) {
+                if (node.deleteFile(name, department)) {
+                    success = true;
+                }
+            }
+            return success;
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
@@ -173,13 +259,32 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         if (user == null || !user.hasPermission("read")) {
             return null;
         }
-        for (NodeInterface node : getAliveNodes()) {
-            FileInfo file = node.getFile(name, department);
-            if (file != null) {
-                return file;
-            }
+        String lockKey = department + ":" + name;
+        if (lockedFiles.containsKey(lockKey)) {
+            System.out.println("DEBUG: File " + name + " in department " + department + " is locked by token " + lockedFiles.get(lockKey));
+            return null;
         }
-        return null;
+        lockedFiles.put(lockKey, token);
+        lockTimeouts.put(lockKey, System.currentTimeMillis());
+
+
+        ReentrantReadWriteLock lock = getFileLock(department, name);
+        lock.readLock().lock();
+        try {
+            for (NodeInterface node : getAliveNodes()) {
+                node.lockFileForRead(name, department);
+            }
+            FileInfo file = null;
+            for (NodeInterface node : getAliveNodes()) {
+                file = node.getFile(name, department);
+                if (file != null) {
+                    break;
+                }
+            }
+            return file;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
 
@@ -189,13 +294,93 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
         if (user == null || !user.hasPermission("edit") || !user.getDepartment().equals(department)) {
             return false;
         }
-        boolean success = false;
-        for (NodeInterface node : getAliveNodes()) {
-            if (node.editFile(name, department, content)) {
-                success = true;
-            }
+        String lockKey = department + ":" + name;
+        if (lockedFiles.containsKey(lockKey)) {
+            System.out.println("DEBUG: File " + name + " in department " + department + " is locked by token " + lockedFiles.get(lockKey));
+            return false;
         }
-        return success;
+        lockedFiles.put(lockKey, token);
+        lockTimeouts.put(lockKey, System.currentTimeMillis());
+
+        ReentrantReadWriteLock lock = getFileLock(department, name);
+        lock.writeLock().lock();
+        try {
+            for (NodeInterface node : getAliveNodes()) {
+                FileInfo file = node.getFile(name, department);
+                if (file != null) {
+                    node.lockFileForWrite(name, department);
+                }
+            }
+            boolean success = false;
+            for (NodeInterface node : getAliveNodes()) {
+                FileInfo file = node.getFile(name, department);
+                if (file != null) {
+                    success = node.editFile(name, department, content);
+                    break;
+                }
+            }
+            return success;
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public void unlockFileForWriteManually(String token, String name, String department) throws RemoteException {
+        User user = validateToken(token);
+        if (user == null || !user.hasPermission("edit") || !user.getDepartment().equals(department)) {
+            throw new RemoteException("Permission denied or invalid token");
+        }
+        String lockKey = department + ":" + name;
+        if (lockedFiles.get(lockKey) != null && lockedFiles.get(lockKey).equals(token)) {
+            ReentrantReadWriteLock lock = getFileLock(department, name);
+            lock.writeLock().lock();
+            try {
+                for (NodeInterface node : getAliveNodes()) {
+                    FileInfo file = node.getFile(name, department);
+                    if (file != null) {
+                        node.unlockFileForWriteManually(name, department);
+                    }
+                }
+                lockedFiles.remove(lockKey);
+                lockTimeouts.remove(lockKey);
+
+                System.out.println("File " + name + " in department " + department + " unlocked successfully!");
+            } finally {
+                lock.writeLock().unlock();
+            }
+        } else {
+            System.out.println("You do not have permission to unlock this file!");
+        }
+    }
+
+    @Override
+    public void unlockFileForReadManually(String token, String name, String department) throws RemoteException {
+        User user = validateToken(token);
+        if (user == null || !user.hasPermission("read") || !user.getDepartment().equals(department)) {
+            throw new RemoteException("Permission denied or invalid token");
+        }
+        String lockKey = department + ":" + name;
+        if (lockedFiles.get(lockKey) != null && lockedFiles.get(lockKey).equals(token)) {
+            ReentrantReadWriteLock lock = getFileLock(department, name);
+            lock.readLock().lock();
+            try {
+                for (NodeInterface node : getAliveNodes()) {
+                    FileInfo file = node.getFile(name, department);
+                    if (file != null) {
+                        node.unlockFileForReadManually(name, department);
+                    }
+                }
+                lockedFiles.remove(lockKey);
+                lockTimeouts.remove(lockKey);
+
+                System.out.println("File " + name + " in department " + department + " unlocked successfully!");
+            } finally {
+                lock.readLock().unlock();
+            }
+        } else {
+            System.out.println("You do not have permission to unlock this file!");
+        }
     }
 
 
@@ -296,6 +481,11 @@ public class CoordinatorImpl extends UnicastRemoteObject implements CoordinatorI
             }
         }
         return aliveNodes;
+    }
+
+    private ReentrantReadWriteLock getFileLock(String department, String name) {
+        String key = department + ":" + name;
+        return fileLocks.computeIfAbsent(key, k -> new ReentrantReadWriteLock());
     }
 
 
