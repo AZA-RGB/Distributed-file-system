@@ -386,10 +386,10 @@ public class NodeImpl extends UnicastRemoteObject implements NodeInterface {
         return true;
     }
 
-    @Override
-    public void doSomething() {
-        // Implementation logic here
-        System.out.println("Doing something...");
+    public void doSomething() throws RemoteException, InterruptedException {
+        Thread.sleep(3000);
+        System.out.println("node: "+nodeId+" is doing something.....");
+//        coordinator.deLoad(nodeId);
     }
 
     public String getNodeId() {
